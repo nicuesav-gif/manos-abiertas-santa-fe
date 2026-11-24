@@ -276,8 +276,26 @@ function armarResenas(id) {
 
 
 /* Le pasa una imagen (foto, video o canvas) al modelo */
+/* Le pasa una imagen (foto, video o canvas) al modelo */
 async function predecir(elemento) {
+  await cargarModelo();
+
   const predicciones = await modelo.predict(elemento);
+
+  // Verificamos que el modelo reconozca todas las clases configuradas
+  const clasesEsperadas = Object.keys(clasesIA);
+  const clasesDetectadas = predicciones.map(p => p.className);
+
+  const faltantes = clasesEsperadas.filter(
+    clase => !clasesDetectadas.includes(clase)
+  );
+
+  if (faltantes.length > 0) {
+    throw new Error(
+      "Faltan clases en el modelo: " + faltantes.join(", ")
+    );
+  }
+
   mostrarBarras(predicciones);
   mostrarResultado(predicciones);
 }

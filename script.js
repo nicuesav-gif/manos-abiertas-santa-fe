@@ -1,9 +1,7 @@
-/* MANOS ABIERTAS SANTA FE — script.js */
-
 const productos = [
-  { id: 1, nombre: "Camiseta", categoria: "ropa", precio: 0, emoji: "👕", descripcion: "Camiseta para donación y clasificación en El Roperito de Manos Abiertas Santa Fe." },
-  { id: 2, nombre: "Pantalon", categoria: "ropa", precio: 0, emoji: "👖", descripcion: "Pantalón para donación y abrigo en las obras de Manos Abiertas Santa Fe." },
-  { id: 3, nombre: "Medias", categoria: "ropa", precio: 0, emoji: "🧦", descripcion: "Medias para donación y uso diario en Manos Abiertas Santa Fe." }
+  { id: 1, nombre: "Camiseta", categoria: "ropa", precio: 0, emoji: "👕", descripcion: "Camiseta para donación en El Roperito de Manos Abiertas Santa Fe." },
+  { id: 2, nombre: "Pantalon", categoria: "ropa", precio: 0, emoji: "👖", descripcion: "Pantalón para donación en El Roperito de Manos Abiertas Santa Fe." },
+  { id: 3, nombre: "Medias", categoria: "ropa", precio: 0, emoji: "🧦", descripcion: "Medias para donación en El Roperito de Manos Abiertas Santa Fe." }
 ];
 
 function formatearPrecio(numero) {
@@ -15,7 +13,6 @@ function buscarProducto(id) {
   return productos.find(function (p) { return p.id === id; });
 }
 
-/* Lista / donación en memoria */
 let seleccionDonacion = [];
 
 function agregarAlCarrito(id) {
@@ -26,60 +23,6 @@ function agregarAlCarrito(id) {
     seleccionDonacion.push({ id: id, cantidad: 1 });
   }
   return seleccionDonacion;
-}
-
-/* Interacciones opcionales seguras (solo se activan si existen en index.html) */
-const btnMenu = document.getElementById("btn-menu");
-const menu = document.getElementById("menu");
-if (btnMenu && menu) {
-  btnMenu.addEventListener("click", function () {
-    const abierto = menu.classList.toggle("abierto");
-    btnMenu.setAttribute("aria-expanded", abierto);
-    btnMenu.textContent = abierto ? "✕" : "☰";
-  });
-
-  menu.querySelectorAll("a").forEach(function (enlace) {
-    enlace.addEventListener("click", function () {
-      menu.classList.remove("abierto");
-      btnMenu.textContent = "☰";
-    });
-  });
-}
-
-const btnTema = document.getElementById("btn-tema");
-if (btnTema) {
-  function aplicarTema(oscuro) {
-    document.body.classList.toggle("oscuro", oscuro);
-    btnTema.textContent = oscuro ? "☀️" : "🌙";
-  }
-  aplicarTema(localStorage.getItem("tema") === "oscuro");
-  btnTema.addEventListener("click", function () {
-    const ahoraOscuro = !document.body.classList.contains("oscuro");
-    aplicarTema(ahoraOscuro);
-    localStorage.setItem("tema", ahoraOscuro ? "oscuro" : "claro");
-  });
-}
-
-const btnArriba = document.getElementById("btn-arriba");
-if (btnArriba) {
-  window.addEventListener("scroll", function () {
-    btnArriba.classList.toggle("oculto", window.scrollY <= 300);
-  });
-  btnArriba.addEventListener("click", function () {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-}
-
-const saludoEl = document.getElementById("saludo");
-if (saludoEl) {
-  const hora = new Date().getHours();
-  const saludo = hora < 12 ? "¡Buen día! ☀️" : hora < 20 ? "¡Buenas tardes! 🌤️" : "¡Buenas noches! 🌙";
-  saludoEl.textContent = saludo + " Bienvenido a Manos Abiertas";
-}
-
-const anioEl = document.getElementById("anio");
-if (anioEl) {
-  anioEl.textContent = new Date().getFullYear();
 }
 
 const formContacto = document.querySelector("#contacto form");

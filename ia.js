@@ -20,7 +20,6 @@ const clasesIA = {
   "Medias": 3,
   "Nada": null
 };
-};
 
 
 /* PASO 3: qué tan seguro tiene que estar el modelo para mostrar un resultado
@@ -223,7 +222,7 @@ btnCamara.addEventListener("click", async function () {
   // Si ya está prendida, la apagamos
   if (camaraEncendida) {
     camaraEncendida = false;
-    webcam.stop();
+    if (webcam) webcam.stop();
     btnCamara.textContent = "📷 Usar cámara";
     iaEstado.textContent = "Cámara apagada.";
     return;
@@ -248,21 +247,28 @@ btnCamara.addEventListener("click", async function () {
 
 /* ---------- Opción B: subir una foto ---------- */
 btnFoto.addEventListener("click", function () {
+  iaArchivo.value = "";
   iaArchivo.click(); // abre el selector de archivos
 });
 
 iaArchivo.addEventListener("change", async function () {
-  const archivo = iaArchivo.files[0];
+  const archivo = iaArchivo.files && iaArchivo.files[0];
   if (!archivo) return;
 
   // Si la cámara estaba prendida, la apagamos
-  if (camaraEncendida) btnCamara.click();
+  if (camaraEncendida) {
+    camaraEncendida = false;
+    if (webcam) webcam.stop();
+    btnCamara.textContent = "📷 Usar cámara";
+  }
 
+  const urlTemporal = URL.createObjectURL(archivo);
   const img = document.createElement("img");
   img.alt = "Foto subida";
-  img.src = URL.createObjectURL(archivo);
+  img.src = urlTemporal;
   iaVisor.innerHTML = "";
   iaVisor.appendChild(img);
+  iaEstado.textContent = "Cargando imagen… ⏳";
 
   img.onload = async function () {
     try {
@@ -271,10 +277,16 @@ iaArchivo.addEventListener("change", async function () {
       await predecir(img);
       iaEstado.textContent = "Listo ✅ Probá con otra foto si querés.";
     } catch (error) {
-      iaEstado.textContent = "❌ " + error.message;
+      iaEstado.textContent = "❌ " + (error.message || "Error al analizar la foto.");
+    } finally {
+      URL.revokeObjectURL(urlTemporal);
     }
   };
-  iaArchivo.value = ""; // permite volver a elegir la misma foto
+
+  img.onerror = function () {
+    iaEstado.textContent = "❌ No se pudo leer el archivo de imagen seleccionado.";
+    URL.revokeObjectURL(urlTemporal);
+  };
 });
 
 
@@ -288,14 +300,11 @@ iaResultado.addEventListener("click", function (evento) {
 });
 
 
-/* ---------- MODO DEMO (cuando URL_MODELO está vacío) ----------
-   Simula lo que haría el modelo, para ver cómo queda la página
-   antes de entrenar. Cuando pegues tu URL, esto desaparece solo. */
+/* ---------- MODO DEMO (cuando URL_MODELO está vacío) ---------- */
 function simularPredicciones(claseElegida) {
   const nombres = Object.keys(clasesIA);
-  const confianza = 0.85 + Math.random() * 0.12; // entre 85% y 97%
+  const confianza = 0.85 + Math.random() * 0.12;
 
-  // A las otras clases les damos un número al azar y repartimos lo que sobra
   const azar = nombres.map(function () { return Math.random(); });
   let sumaOtras = 0;
   nombres.forEach(function (n, i) { if (n !== claseElegida) sumaOtras += azar[i]; });
@@ -313,7 +322,6 @@ if (modoDemo) {
   btnFoto.classList.add("oculto");
   iaEstado.textContent = "Modo demo: los resultados son simulados. Tocá un ítem para \"mostrárselo\" a la IA.";
 
-  // Un botón por cada clase del modelo
   for (const nombre of Object.keys(clasesIA)) {
     const producto = clasesIA[nombre] ? buscarProducto(clasesIA[nombre]) : null;
     const boton = document.createElement("button");
@@ -338,7 +346,6 @@ if (modoDemo) {
     iaDemo.appendChild(boton);
   }
 
-  // Arrancamos mostrando un ejemplo, para que la sección no quede vacía
   iaDemo.querySelector(".ia-muestra").click();
 } else {
   iaDemo.classList.add("oculto");

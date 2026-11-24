@@ -81,6 +81,79 @@ async function cargarModelo() {
   return modelo;
 }
 
+let seleccionDonacion = [];
+
+function agregarAlCarrito(id) {
+  const producto = buscarProducto(id);
+
+  if (!producto) return false;
+
+  const existente = seleccionDonacion.find(
+    item => item.id === Number(id)
+  );
+
+  if (existente) {
+    existente.cantidad++;
+  } else {
+    seleccionDonacion.push({
+      id: Number(id),
+      cantidad: 1
+    });
+  }
+
+  actualizarResumenDonacion();
+  return true;
+}
+
+function actualizarResumenDonacion() {
+  let resumen = document.getElementById("ia-carrito");
+
+  if (!resumen) {
+    resumen = document.createElement("div");
+    resumen.id = "ia-carrito";
+
+    const resultado = document.getElementById("ia-resultado");
+
+    resultado.insertAdjacentElement("afterend", resumen);
+  }
+
+  if (seleccionDonacion.length === 0) {
+    resumen.innerHTML = "";
+    return;
+  }
+
+  const total = seleccionDonacion.reduce(
+    (suma, item) => suma + item.cantidad,
+    0
+  );
+
+  resumen.innerHTML = `
+    <h3>❤️ Mi donación</h3>
+    <ul>
+      ${seleccionDonacion.map(item => {
+        const producto = buscarProducto(item.id);
+
+        return `
+          <li>
+            ${producto.emoji} ${producto.nombre}:
+            ${item.cantidad}
+          </li>
+        `;
+      }).join("")}
+    </ul>
+    <p><strong>Total de prendas: ${total}</strong></p>
+    <button type="button" id="ia-vaciar-carrito">
+      Vaciar donación
+    </button>
+  `;
+
+  document.getElementById("ia-vaciar-carrito")
+    .addEventListener("click", function () {
+      seleccionDonacion = [];
+      actualizarResumenDonacion();
+    });
+}
+
 
 /* Dibuja una barra por clase con su porcentaje.
    "predicciones" es un array de objetos: { className: "Medialunas", probability: 0.93 } */

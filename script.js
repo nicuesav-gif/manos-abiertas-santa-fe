@@ -13,33 +13,76 @@ function buscarProducto(id) {
   return productos.find(function (p) { return p.id === id; });
 }
 
+
 let seleccionDonacion = [];
 
 function agregarAlCarrito(id) {
-  const existente = seleccionDonacion.find(function (item) { return item.id === id; });
+  const producto = buscarProducto(id);
+
+  if (!producto) return false;
+
+  const existente = seleccionDonacion.find(
+    item => item.id === Number(id)
+  );
+
   if (existente) {
     existente.cantidad++;
   } else {
-    seleccionDonacion.push({ id: id, cantidad: 1 });
+    seleccionDonacion.push({
+      id: Number(id),
+      cantidad: 1
+    });
   }
-  return seleccionDonacion;
+
+  actualizarResumenDonacion();
+  return true;
 }
 
-const formContacto = document.querySelector("#contacto form");
-if (formContacto) {
-  formContacto.addEventListener("submit", function (evento) {
-    evento.preventDefault();
-    const campoNombre = document.getElementById("nombre");
-    const campoEmail = document.getElementById("email");
-    if (!campoNombre || !campoNombre.value.trim()) {
-      alert("Por favor, escribí tu nombre.");
-      return;
-    }
-    if (!campoEmail || !campoEmail.value.trim()) {
-      alert("Por favor, escribí tu email.");
-      return;
-    }
-    alert("¡Gracias por escribir a Manos Abiertas Santa Fe! Tu consulta fue registrada.");
-    formContacto.reset();
-  });
+function actualizarResumenDonacion() {
+  let resumen = document.getElementById("ia-carrito");
+
+  if (!resumen) {
+    resumen = document.createElement("div");
+    resumen.id = "ia-carrito";
+
+    const resultado = document.getElementById("ia-resultado");
+
+    resultado.insertAdjacentElement("afterend", resumen);
+  }
+
+  if (seleccionDonacion.length === 0) {
+    resumen.innerHTML = "";
+    return;
+  }
+
+  const total = seleccionDonacion.reduce(
+    (suma, item) => suma + item.cantidad,
+    0
+  );
+
+  resumen.innerHTML = `
+    <h3>❤️ Mi donación</h3>
+    <ul>
+      ${seleccionDonacion.map(item => {
+        const producto = buscarProducto(item.id);
+
+        return `
+          <li>
+            ${producto.emoji} ${producto.nombre}:
+            ${item.cantidad}
+          </li>
+        `;
+      }).join("")}
+    </ul>
+    <p><strong>Total de prendas: ${total}</strong></p>
+    <button type="button" id="ia-vaciar-carrito">
+      Vaciar donación
+    </button>
+  `;
+
+  document.getElementById("ia-vaciar-carrito")
+    .addEventListener("click", function () {
+      seleccionDonacion = [];
+      actualizarResumenDonacion();
+    });
 }

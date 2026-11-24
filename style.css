@@ -283,3 +283,180 @@ footer strong {
     height: 110px;
   }
 }
+/* RECONOCEDOR CON IA */
+#reconocer {
+  margin-top: 2rem;
+}
+
+.ia-controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.ia-controles button,
+.ia-tarjeta .btn,
+.ia-muestra {
+  cursor: pointer;
+}
+
+#ia-estado {
+  font-weight: 600;
+  margin: 0.75rem 0 1rem;
+}
+
+#ia-visor {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+#ia-visor img,
+#ia-visor canvas {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  display: block;
+}
+
+.ia-visor-emoji {
+  font-size: 3.5rem;
+  line-height: 1.2;
+}
+
+#ia-barras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.ia-fila {
+  display: grid;
+  grid-template-columns: 120px 1fr 56px;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ia-nombre {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ia-pista {
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.12);
+  display: block;
+}
+
+.ia-relleno {
+  height: 100%;
+  width: 0%;
+  display: block;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.65;
+  transition: width 0.2s ease;
+}
+
+.ia-fila.ganadora .ia-nombre,
+.ia-fila.ganadora .ia-porcentaje {
+  font-weight: 700;
+}
+
+.ia-fila.ganadora .ia-relleno {
+  opacity: 1;
+}
+
+.ia-porcentaje {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ia-resultado {
+  margin-top: 1rem;
+}
+
+.ia-aviso {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.ia-tarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.ia-tarjeta .emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.ia-etiqueta {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.25rem;
+}
+
+.ia-resenas {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ia-resenas-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ia-ejemplo {
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.ia-resena {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.ia-demo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.ia-muestra {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+}
+
+.ia-muestra.activo {
+  font-weight: 700;
+}
+
+.oculto {
+  display: none !important;
+}

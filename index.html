@@ -18,6 +18,7 @@
         <li><a href="#equipo">Nuestro equipo</a></li>
         <li><a href="#obras">Nuestras obras</a></li>
         <li><a href="#como-ayudar">Cómo ayudar</a></li>
+        <li><a href="#reconocer">Reconocer donación</a></li>
         <li><a href="#contacto">Contacto</a></li>
       </ul>
     </nav>
@@ -198,6 +199,27 @@
       </article>
     </section>
 
+    <!-- RECONOCEDOR CON IA -->
+    <section id="reconocer">
+      <h2>Reconocer donación con IA</h2>
+      <p>Mostrá una prenda por cámara o subí una foto para identificar si corresponde a <strong>Camiseta</strong>, <strong>Pantalon</strong> o <strong>Medias</strong> (o si no hay prenda / fondo vacío) y conocer cómo ayuda en <strong>Manos Abiertas Santa Fe</strong>.</p>
+
+      <p><strong>¿Cómo funciona?</strong> El modelo entrenado en Teachable Machine analiza la imagen en el navegador, muestra el nivel de confianza de cada clase y vincula la prenda reconocida con su información de donación.</p>
+
+      <div class="ia-controles">
+        <button id="btn-camara" type="button">📷 Usar cámara</button>
+        <button id="btn-foto" type="button">🖼️ Subir foto</button>
+        <input id="ia-archivo" type="file" accept="image/*" hidden>
+      </div>
+
+      <p id="ia-estado">Listo para comenzar.</p>
+
+      <div id="ia-visor"></div>
+      <div id="ia-barras"></div>
+      <div id="ia-resultado"></div>
+      <div id="ia-demo"></div>
+    </section>
+
     <section id="contacto">
       <h2>Contacto</h2>
 
@@ -249,6 +271,13 @@
     <p>Trabajo realizado por <strong>Valentino Nicuesa</strong>, Braulio Canciani y Agustín Rolón</p>
     <p>Proyecto integrador "Visibilizar para Ayudar" — 2026</p>
   </footer>
+
+  <!-- Librerías de TensorFlow.js y Teachable Machine -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
+  <script src="script.js"></script>
+  <!-- ia.js va DESPUÉS de script.js porque usa sus funciones -->
+  <script src="ia.js"></script>
 
 </body>
 </html>

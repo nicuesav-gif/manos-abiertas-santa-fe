@@ -4,10 +4,14 @@
    Este archivo agrega el "Reconocedor de donaciones" a la página.
    Va DESPUÉS de script.js, porque usa sus funciones
    buscarProducto(), formatearPrecio() y agregarAlCarrito().
+
+   PARA ADAPTARLO A MANOS ABIERTAS SOLO HAY QUE CAMBIAR LOS PASOS 1, 2, 3 y 4.
 */
+
 
 /* PASO 1: el enlace de tu modelo */
 const URL_MODELO = "https://teachablemachine.withgoogle.com/models/rFAu5UI1b/";
+
 
 /* PASO 2: conectá cada CLASE del modelo con un ítem de script.js */
 const clasesIA = {
@@ -16,10 +20,13 @@ const clasesIA = {
   "Medias": 3,
   "Nada": null
 };
+};
+
 
 /* PASO 3: qué tan seguro tiene que estar el modelo para mostrar un resultado
    0.8 = 80%. Si lo bajás, se equivoca más; si lo subís, contesta menos veces. */
 const CONFIANZA_MINIMA = 0.8;
+
 
 /* PASO 4: destino y uso de cada donación en Manos Abiertas */
 const RESENAS_DE_EJEMPLO = false;
@@ -42,6 +49,7 @@ const resenas = {
   ]
 };
 
+
 /* ============ De acá para abajo no hace falta tocar nada ============ */
 
 const iaEstado = document.getElementById("ia-estado");
@@ -59,6 +67,7 @@ let webcam = null;
 let camaraEncendida = false;
 let ultimaClaseMostrada = "";
 
+
 /* Carga el modelo una sola vez (la primera vez que se usa) */
 async function cargarModelo() {
   if (modelo) return modelo;
@@ -73,8 +82,9 @@ async function cargarModelo() {
   return modelo;
 }
 
+
 /* Dibuja una barra por clase con su porcentaje.
-   "predicciones" es un array de objetos: { className: "Camiseta", probability: 0.93 } */
+   "predicciones" es un array de objetos: { className: "Medialunas", probability: 0.93 } */
 function mostrarBarras(predicciones) {
   for (const p of predicciones) {
     let fila = iaBarras.querySelector('[data-clase="' + p.className + '"]');
@@ -96,6 +106,7 @@ function mostrarBarras(predicciones) {
     fila.querySelector(".ia-porcentaje").textContent = porcentaje + "%";
   }
 }
+
 
 /* Busca la clase con el porcentaje más alto y muestra el producto */
 function mostrarResultado(predicciones) {
@@ -149,6 +160,7 @@ function mostrarResultado(predicciones) {
   }
 }
 
+
 /* Convierte un número en estrellas: 4 -> "★★★★☆" */
 function dibujarEstrellas(cantidad) {
   const llenas = Math.round(cantidad);
@@ -162,6 +174,7 @@ function armarResenas(id) {
     return '<p class="ia-aviso">Este ítem todavía no tiene mensajes cargados.</p>';
   }
 
+  // Promedio de estrellas: sumamos todas y dividimos por la cantidad
   let suma = 0;
   for (const r of lista) {
     suma += r.estrellas;
@@ -189,6 +202,7 @@ function armarResenas(id) {
   return html + "</div>";
 }
 
+
 /* Le pasa una imagen (foto, video o canvas) al modelo */
 async function predecir(elemento) {
   const predicciones = await modelo.predict(elemento);
@@ -196,15 +210,17 @@ async function predecir(elemento) {
   mostrarResultado(predicciones);
 }
 
+
 /* ---------- Opción A: cámara ---------- */
 async function bucleCamara() {
   if (!camaraEncendida) return;
-  webcam.update();
+  webcam.update();             // toma un cuadro nuevo de la cámara
   await predecir(webcam.canvas);
-  requestAnimationFrame(bucleCamara);
+  requestAnimationFrame(bucleCamara); // y vuelve a empezar
 }
 
 btnCamara.addEventListener("click", async function () {
+  // Si ya está prendida, la apagamos
   if (camaraEncendida) {
     camaraEncendida = false;
     webcam.stop();
@@ -215,7 +231,7 @@ btnCamara.addEventListener("click", async function () {
   try {
     await cargarModelo();
     iaEstado.textContent = "Pidiendo permiso para la cámara…";
-    webcam = new tmImage.Webcam(300, 300, true);
+    webcam = new tmImage.Webcam(300, 300, true); // ancho, alto, espejado
     await webcam.setup();
     await webcam.play();
     iaVisor.innerHTML = "";
@@ -229,15 +245,17 @@ btnCamara.addEventListener("click", async function () {
   }
 });
 
+
 /* ---------- Opción B: subir una foto ---------- */
 btnFoto.addEventListener("click", function () {
-  iaArchivo.click();
+  iaArchivo.click(); // abre el selector de archivos
 });
 
 iaArchivo.addEventListener("change", async function () {
   const archivo = iaArchivo.files[0];
   if (!archivo) return;
 
+  // Si la cámara estaba prendida, la apagamos
   if (camaraEncendida) btnCamara.click();
 
   const img = document.createElement("img");
@@ -256,10 +274,11 @@ iaArchivo.addEventListener("change", async function () {
       iaEstado.textContent = "❌ " + error.message;
     }
   };
-  iaArchivo.value = "";
+  iaArchivo.value = ""; // permite volver a elegir la misma foto
 });
 
-/* ---------- Botón "Sumar a mi donación" ---------- */
+
+/* ---------- Botón "Sumar a mi donación" (usa el carrito de script.js) ---------- */
 iaResultado.addEventListener("click", function (evento) {
   const id = evento.target.dataset.iaId;
   if (id) {
@@ -268,11 +287,15 @@ iaResultado.addEventListener("click", function (evento) {
   }
 });
 
-/* ---------- MODO DEMO (cuando URL_MODELO está vacío) ---------- */
+
+/* ---------- MODO DEMO (cuando URL_MODELO está vacío) ----------
+   Simula lo que haría el modelo, para ver cómo queda la página
+   antes de entrenar. Cuando pegues tu URL, esto desaparece solo. */
 function simularPredicciones(claseElegida) {
   const nombres = Object.keys(clasesIA);
-  const confianza = 0.85 + Math.random() * 0.12;
+  const confianza = 0.85 + Math.random() * 0.12; // entre 85% y 97%
 
+  // A las otras clases les damos un número al azar y repartimos lo que sobra
   const azar = nombres.map(function () { return Math.random(); });
   let sumaOtras = 0;
   nombres.forEach(function (n, i) { if (n !== claseElegida) sumaOtras += azar[i]; });
@@ -290,6 +313,7 @@ if (modoDemo) {
   btnFoto.classList.add("oculto");
   iaEstado.textContent = "Modo demo: los resultados son simulados. Tocá un ítem para \"mostrárselo\" a la IA.";
 
+  // Un botón por cada clase del modelo
   for (const nombre of Object.keys(clasesIA)) {
     const producto = clasesIA[nombre] ? buscarProducto(clasesIA[nombre]) : null;
     const boton = document.createElement("button");
@@ -314,6 +338,7 @@ if (modoDemo) {
     iaDemo.appendChild(boton);
   }
 
+  // Arrancamos mostrando un ejemplo, para que la sección no quede vacía
   iaDemo.querySelector(".ia-muestra").click();
 } else {
   iaDemo.classList.add("oculto");

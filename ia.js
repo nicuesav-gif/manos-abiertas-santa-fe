@@ -61,97 +61,36 @@ const btnFoto = document.getElementById("btn-foto");
 const iaDemo = document.getElementById("ia-demo");
 
 const modoDemo = URL_MODELO.trim() === "";
-let modelo = null;
+let cargaModelo = null;
 let webcam = null;
-let camaraEncendida = false;
+let capturaActual = 0;
 let ultimaClaseMostrada = "";
 
 
 /* Carga el modelo una sola vez (la primera vez que se usa) */
 async function cargarModelo() {
-  if (modelo) return modelo;
   if (typeof tmImage === "undefined") {
     throw new Error("No se pudo cargar la librería de Teachable Machine. Revisá tu conexión a internet.");
   }
-  let url = URL_MODELO.trim();
-  if (!url.endsWith("/")) url += "/";
-  iaEstado.textContent = "Cargando el modelo… ⏳";
-  modelo = await tmImage.load(url + "model.json", url + "metadata.json");
-  iaEstado.textContent = "Modelo listo ✅";
-  return modelo;
-}
-
-let seleccionDonacion = [];
-
-function agregarAlCarrito(id) {
-  const producto = buscarProducto(id);
-
-  if (!producto) return false;
-
-  const existente = seleccionDonacion.find(
-    item => item.id === Number(id)
-  );
-
-  if (existente) {
-    existente.cantidad++;
-  } else {
-    seleccionDonacion.push({
-      id: Number(id),
-      cantidad: 1
-    });
+  if (!cargaModelo) {
+    let url = URL_MODELO.trim();
+    if (!url.endsWith("/")) url += "/";
+    cargaModelo = tmImage.load(url + "model.json", url + "metadata.json")
+      .then(function (modelo) {
+        const esperadas = Object.keys(clasesIA);
+        const etiquetas = modelo.getClassLabels();
+        if (etiquetas.length !== esperadas.length ||
+            !esperadas.every(clase => etiquetas.includes(clase))) {
+          throw new Error("El modelo debe contener estas clases: " + esperadas.join(", ") + ".");
+        }
+        return modelo;
+      })
+      .catch(function (error) {
+        cargaModelo = null;
+        throw error;
+      });
   }
-
-  actualizarResumenDonacion();
-  return true;
-}
-
-function actualizarResumenDonacion() {
-  let resumen = document.getElementById("ia-carrito");
-
-  if (!resumen) {
-    resumen = document.createElement("div");
-    resumen.id = "ia-carrito";
-
-    const resultado = document.getElementById("ia-resultado");
-
-    resultado.insertAdjacentElement("afterend", resumen);
-  }
-
-  if (seleccionDonacion.length === 0) {
-    resumen.innerHTML = "";
-    return;
-  }
-
-  const total = seleccionDonacion.reduce(
-    (suma, item) => suma + item.cantidad,
-    0
-  );
-
-  resumen.innerHTML = `
-    <h3>❤️ Mi donación</h3>
-    <ul>
-      ${seleccionDonacion.map(item => {
-        const producto = buscarProducto(item.id);
-
-        return `
-          <li>
-            ${producto.emoji} ${producto.nombre}:
-            ${item.cantidad}
-          </li>
-        `;
-      }).join("")}
-    </ul>
-    <p><strong>Total de prendas: ${total}</strong></p>
-    <button type="button" id="ia-vaciar-carrito">
-      Vaciar donación
-    </button>
-  `;
-
-  document.getElementById("ia-vaciar-carrito")
-    .addEventListener("click", function () {
-      seleccionDonacion = [];
-      actualizarResumenDonacion();
-    });
+  return cargaModelo;
 }
 
 
@@ -225,7 +164,7 @@ function mostrarResultado(predicciones) {
           "<h3>" + producto.nombre + "</h3>" +
           '<p class="descripcion">' + producto.descripcion + "</p>" +
           '<p class="precio">' + formatearPrecio(producto.precio) + "</p>" +
-          '<button class="btn" data-ia-id="' + producto.id + '">Sumar a mi donación</button>' +
+          '<button type="button" class="btn" data-ia-id="' + producto.id + '">Sumar a mi donación</button>' +
         "</div>" +
       "</div>" +
       armarResenas(producto.id);
@@ -275,63 +214,80 @@ function armarResenas(id) {
 }
 
 
-/* Le pasa una imagen (foto, video o canvas) al modelo */
-/* Le pasa una imagen (foto, video o canvas) al modelo */
-async function predecir(elemento) {
-  await cargarModelo();
-
+/* Le pasa una imagen (foto o canvas) al modelo */
+async function predecir(modelo, elemento, captura) {
   const predicciones = await modelo.predict(elemento);
-
-  // Verificamos que el modelo reconozca todas las clases configuradas
-  const clasesEsperadas = Object.keys(clasesIA);
-  const clasesDetectadas = predicciones.map(p => p.className);
-
-  const faltantes = clasesEsperadas.filter(
-    clase => !clasesDetectadas.includes(clase)
-  );
-
-  if (faltantes.length > 0) {
-    throw new Error(
-      "Faltan clases en el modelo: " + faltantes.join(", ")
-    );
-  }
+  if (captura !== capturaActual) return;
 
   mostrarBarras(predicciones);
   mostrarResultado(predicciones);
 }
 
+function limpiarCaptura() {
+  capturaActual++;
+  if (webcam) {
+    webcam.stop();
+    webcam = null;
+  }
+  btnCamara.textContent = "📷 Usar cámara";
+  iaVisor.replaceChildren();
+  iaBarras.replaceChildren();
+  iaResultado.replaceChildren();
+  ultimaClaseMostrada = "";
+  return capturaActual;
+}
+
 
 /* ---------- Opción A: cámara ---------- */
-async function bucleCamara() {
-  if (!camaraEncendida) return;
-  webcam.update();             // toma un cuadro nuevo de la cámara
-  await predecir(webcam.canvas);
-  requestAnimationFrame(bucleCamara); // y vuelve a empezar
+async function bucleCamara(modelo, captura) {
+  if (captura !== capturaActual) return;
+  try {
+    webcam.update();
+    await predecir(modelo, webcam.canvas, captura);
+    if (captura === capturaActual) {
+      requestAnimationFrame(() => bucleCamara(modelo, captura));
+    }
+  } catch (error) {
+    if (captura !== capturaActual) return;
+    limpiarCaptura();
+    iaEstado.textContent = "❌ " + (error.message || "Error al analizar la cámara.");
+  }
 }
 
 btnCamara.addEventListener("click", async function () {
-  // Si ya está prendida, la apagamos
-  if (camaraEncendida) {
-    camaraEncendida = false;
-    if (webcam) webcam.stop();
-    btnCamara.textContent = "📷 Usar cámara";
+  if (webcam) {
+    limpiarCaptura();
     iaEstado.textContent = "Cámara apagada.";
     return;
   }
+
+  const captura = limpiarCaptura();
+  btnCamara.disabled = true;
+  let camara;
+  let permisoConcedido = false;
   try {
-    await cargarModelo();
+    iaEstado.textContent = "Cargando el modelo… ⏳";
+    const modelo = await cargarModelo();
+    if (captura !== capturaActual) return;
     iaEstado.textContent = "Pidiendo permiso para la cámara…";
-    webcam = new tmImage.Webcam(300, 300, true); // ancho, alto, espejado
-    await webcam.setup();
-    await webcam.play();
-    iaVisor.innerHTML = "";
+    camara = new tmImage.Webcam(300, 300, true);
+    await camara.setup();
+    permisoConcedido = true;
+    if (captura !== capturaActual) return;
+    await camara.play();
+    if (captura !== capturaActual) return;
+    webcam = camara;
     iaVisor.appendChild(webcam.canvas);
-    camaraEncendida = true;
     btnCamara.textContent = "⏹ Apagar cámara";
     iaEstado.textContent = "Mostrale una prenda a la cámara 🎥";
-    bucleCamara();
+    requestAnimationFrame(() => bucleCamara(modelo, captura));
   } catch (error) {
-    iaEstado.textContent = "❌ " + (error.message || "No se pudo usar la cámara. Revisá los permisos del navegador.");
+    if (captura === capturaActual) {
+      iaEstado.textContent = "❌ " + (error.message || "No se pudo usar la cámara. Revisá los permisos del navegador.");
+    }
+  } finally {
+    if (permisoConcedido && webcam !== camara) camara.stop();
+    btnCamara.disabled = false;
   }
 });
 
@@ -339,54 +295,49 @@ btnCamara.addEventListener("click", async function () {
 /* ---------- Opción B: subir una foto ---------- */
 btnFoto.addEventListener("click", function () {
   iaArchivo.value = "";
-  iaArchivo.click(); // abre el selector de archivos
+  iaArchivo.click();
 });
 
 iaArchivo.addEventListener("change", async function () {
   const archivo = iaArchivo.files && iaArchivo.files[0];
   if (!archivo) return;
 
-  // Si la cámara estaba prendida, la apagamos
-  if (camaraEncendida) {
-    camaraEncendida = false;
-    if (webcam) webcam.stop();
-    btnCamara.textContent = "📷 Usar cámara";
-  }
-
+  const captura = limpiarCaptura();
   const urlTemporal = URL.createObjectURL(archivo);
   const img = document.createElement("img");
   img.alt = "Foto subida";
   img.src = urlTemporal;
-  iaVisor.innerHTML = "";
-  iaVisor.appendChild(img);
   iaEstado.textContent = "Cargando imagen… ⏳";
 
-  img.onload = async function () {
-    try {
-      await cargarModelo();
-      ultimaClaseMostrada = "";
-      await predecir(img);
+  try {
+    await img.decode();
+    if (captura !== capturaActual) return;
+    iaVisor.appendChild(img);
+    iaEstado.textContent = "Cargando el modelo… ⏳";
+    const modelo = await cargarModelo();
+    if (captura !== capturaActual) return;
+    await predecir(modelo, img, captura);
+    if (captura === capturaActual) {
       iaEstado.textContent = "Listo ✅ Probá con otra foto si querés.";
-    } catch (error) {
-      iaEstado.textContent = "❌ " + (error.message || "Error al analizar la foto.");
-    } finally {
-      URL.revokeObjectURL(urlTemporal);
     }
-  };
-
-  img.onerror = function () {
-    iaEstado.textContent = "❌ No se pudo leer el archivo de imagen seleccionado.";
+  } catch (error) {
+    if (captura === capturaActual) {
+      const mensaje = img.naturalWidth
+        ? (error.message || "Error al analizar la foto.")
+        : "No se pudo leer el archivo de imagen seleccionado.";
+      iaEstado.textContent = "❌ " + mensaje;
+    }
+  } finally {
     URL.revokeObjectURL(urlTemporal);
-  };
+  }
 });
 
 
 /* ---------- Botón "Sumar a mi donación" (usa el carrito de script.js) ---------- */
 iaResultado.addEventListener("click", function (evento) {
-  const id = evento.target.dataset.iaId;
-  if (id) {
-    agregarAlCarrito(Number(id));
-    evento.target.textContent = "✅ Sumado";
+  const boton = evento.target.closest("button[data-ia-id]");
+  if (boton && agregarAlCarrito(Number(boton.dataset.iaId))) {
+    boton.textContent = "✅ Sumado";
   }
 });
 

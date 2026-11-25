@@ -10,7 +10,7 @@
 
 
 /* PASO 1: el enlace de tu modelo */
-const URL_MODELO = "https://teachablemachine.withgoogle.com/models/rFAu5UI1b/";
+const URL_MODELO = "https://teachablemachine.withgoogle.com/models/V64d7FHMI/";
 
 
 /* PASO 2: conectá cada CLASE del modelo con un ítem de script.js */

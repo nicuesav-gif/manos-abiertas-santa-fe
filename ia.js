@@ -21,6 +21,14 @@ const clasesIA = {
   "Nada": null
 };
 
+function normalizarClase(nombre) {
+  return nombre.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
+}
+
+const clasesPorEtiqueta = new Map(
+  Object.keys(clasesIA).map(clase => [normalizarClase(clase), clase])
+);
+
 
 /* PASO 3: qué tan seguro tiene que estar el modelo para mostrar un resultado
    0.8 = 80%. Si lo bajás, se equivoca más; si lo subís, contesta menos veces. */
@@ -79,9 +87,14 @@ async function cargarModelo() {
       .then(function (modelo) {
         const esperadas = Object.keys(clasesIA);
         const etiquetas = modelo.getClassLabels();
+        const clasesDetectadas = new Set(etiquetas.map(normalizarClase));
         if (etiquetas.length !== esperadas.length ||
-            !esperadas.every(clase => etiquetas.includes(clase))) {
-          throw new Error("El modelo debe contener estas clases: " + esperadas.join(", ") + ".");
+            !esperadas.every(clase => clasesDetectadas.has(normalizarClase(clase)))) {
+          throw new Error(
+            "El modelo no coincide con el catálogo de donaciones. Clases esperadas: " +
+            esperadas.join(", ") + ". Clases del modelo: " +
+            etiquetas.map(etiqueta => JSON.stringify(etiqueta)).join(", ") + "."
+          );
         }
         return modelo;
       })
@@ -219,8 +232,12 @@ async function predecir(modelo, elemento, captura) {
   const predicciones = await modelo.predict(elemento);
   if (captura !== capturaActual) return;
 
-  mostrarBarras(predicciones);
-  mostrarResultado(predicciones);
+  const prediccionesCatalogo = predicciones.map(({className, probability}) => ({
+    className: clasesPorEtiqueta.get(normalizarClase(className)),
+    probability
+  }));
+  mostrarBarras(prediccionesCatalogo);
+  mostrarResultado(prediccionesCatalogo);
 }
 
 function limpiarCaptura() {
